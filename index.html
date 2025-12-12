@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0b0f19">
+<!-- iOS 전용 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="데이트일지">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+
+  <title>우리 데이트 일지</title>
+  <style>
+    :root{
+      --bg:#0b0f19;
+      --card:#121a2a;
+      --card2:#0f1626;
+      --text:#e9eefc;
+      --muted:#aab6d6;
+      --line:#24304d;
+      --accent:#7aa2ff;
+      --accent2:#ff7ab6;
+      --good:#5eead4;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius2: 14px;
+      font-synthesis-weight:none;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(122,162,255,.20), transparent 55%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(255,122,182,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      letter-spacing:-0.2px;
+    }
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding:18px 20px;border:1px solid var(--line);border-radius:var(--radius);
+      background:linear-gradient(180deg, rgba(18,26,42,.92), rgba(15,22,38,.86));
+      box-shadow:var(--shadow);
+      position:sticky;top:16px;backdrop-filter: blur(10px);
+      z-index:5;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      display:grid;place-items:center;font-weight:800;
+      box-shadow:0 8px 20px rgba(122,162,255,.22);
+    }
+    .title{display:flex;flex-direction:column;line-height:1.15}
+    .title strong{font-size:16px}
+    .title span{font-size:12px;color:var(--muted)}
+    .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
+      border:1px solid var(--line);background:rgba(0,0,0,.20);
+      padding:8px 10px;border-radius:999px;color:var(--muted);
+      display:flex;gap:8px;align-items:center;font-size:12px;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      padding:10px 12px;border-radius:12px;
+      cursor:pointer;
+      transition:transform .05s ease, background .15s ease, border-color .15s ease;
+      font-weight:650;
+    }
+    .btn:hover{background:rgba(255,255,255,.08);border-color:#334066}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{
+      border-color:rgba(122,162,255,.55);
+      background:linear-gradient(135deg, rgba(122,162,255,.22), rgba(255,122,182,.16));
+    }
+    .btn.danger{border-color:rgba(251,113,133,.55);background:rgba(251,113,133,.10)}
+    main{margin-top:18px;display:grid;grid-template-columns: 1.2fr .8fr; gap:16px}
+    @media (max-width: 980px){ main{grid-template-columns:1fr;}}
+    .card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(18,26,42,.92), rgba(15,22,38,.86));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 18px;border-bottom:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .card .hd h2{margin:0;font-size:15px}
+    .card .bd{padding:16px 18px}
+    .grid{display:grid;grid-template-columns: 1fr 1fr; gap:12px}
+    @media (max-width: 580px){ .grid{grid-template-columns:1fr;} }
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input, textarea, select{
+      width:100%;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      outline:none;
+    }
+    textarea{min-height:110px;resize:vertical}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+    .hint{font-size:12px;color:var(--muted);margin-top:8px}
+    .list{display:flex;flex-direction:column;gap:10px}
+    .item{
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+      padding:12px 12px;
+      display:flex;gap:12px;align-items:flex-start;justify-content:space-between;
+    }
+    .meta{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .meta .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .tag{
+      font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);
+      color:var(--muted);background:rgba(0,0,0,.12);
+    }
+    .mood{border-color:rgba(122,162,255,.35)}
+    .mood.good{border-color:rgba(94,234,212,.5); color:rgba(94,234,212,.95)}
+    .mood.ok{border-color:rgba(251,191,36,.5); color:rgba(251,191,36,.95)}
+    .mood.bad{border-color:rgba(251,113,133,.55); color:rgba(251,113,133,.95)}
+    .ttl{
+      font-weight:800;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:520px;
+    }
+    .desc{
+      color:var(--muted);font-size:13px;line-height:1.45;
+      overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      max-width:680px;
+    }
+    .actions{display:flex;gap:8px;flex-shrink:0}
+    .kpi{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    .stat{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px 12px;
+      background:rgba(0,0,0,.16);
+    }
+    .stat b{display:block;font-size:18px}
+    .stat span{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--line);margin:14px 0}
+    .search{display:flex;gap:8px;align-items:center}
+    .search input{flex:1}
+    .small{font-size:12px;color:var(--muted)}
+    .modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      display:none;align-items:center;justify-content:center;padding:18px;z-index:50;
+    }
+    .modal.on{display:flex}
+    .modal .box{
+      width:min(720px, 100%);
+      border:1px solid var(--line);
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(18,26,42,.98), rgba(15,22,38,.96));
+      box-shadow:0 20px 60px rgba(0,0,0,.5);
+      overflow:hidden;
+    }
+    .modal .box .hd{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+    .modal .box .bd{padding:16px 18px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+    .toast{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      background:rgba(18,26,42,.96);
+      border:1px solid var(--line);
+      padding:10px 12px;border-radius:999px;
+      display:none;gap:10px;align-items:center;
+      box-shadow:var(--shadow);z-index:60;
+    }
+    .toast.on{display:flex}
+    .toast .dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">♥</div>
+        <div class="title">
+          <strong>우리 데이트 일지</strong>
+          <span id="subtitle">한 번의 클릭으로 추억 저장 ✨</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="pill">
+          <span>커플코드</span>
+          <b id="coupleCodeLabel" class="mono">-</b>
+        </div>
+        <button class="btn" id="btnExport">내보내기</button>
+        <button class="btn" id="btnImport">불러오기</button>
+        <button class="btn danger" id="btnReset">초기화</button>
+        <button class="btn primary" id="btnCouple">커플코드 설정</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Left: Add / Edit -->
+      <section class="card">
+        <div class="hd">
+          <h2 id="formTitle">새 데이트 기록</h2>
+          <div class="row" style="gap:8px;flex-wrap:nowrap">
+            <button class="btn" id="btnClear">폼 비우기</button>
+            <button class="btn primary" id="btnSave">저장</button>
+          </div>
+        </div>
+        <div class="bd">
+          <div class="grid">
+            <div>
+              <label>날짜</label>
+              <input type="date" id="date" />
+            </div>
+            <div>
+              <label>장소</label>
+              <input type="text" id="place" placeholder="예) 전주 한옥마을, 노들섬…" />
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top:12px">
+            <div>
+              <label>제목</label>
+              <input type="text" id="title" placeholder="예) 첫 크리스마스 데이트" />
+            </div>
+            <div>
+              <label>분위기(무드)</label>
+              <select id="mood">
+                <option value="good">좋음 😊</option>
+                <option value="ok">보통 🙂</option>
+                <option value="bad">별로 😶</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>한 줄 요약</label>
+            <input type="text" id="summary" placeholder="예) 비가 와서 더 낭만적이었음" />
+          </div>
+
+          <div style="margin-top:12px">
+            <label>본문</label>
+            <textarea id="content" placeholder="그날 있었던 일, 대화, 느낀 점을 적어줘. (짧아도 됨)"></textarea>
+            <div class="hint">팁: 나중에 검색하기 쉽도록 키워드를 넣어두면 좋아.</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="grid">
+            <div>
+              <label>태그 (쉼표로 구분)</label>
+              <input type="text" id="tags" placeholder="예) 맛집, 산책, 영화, 기념일" />
+            </div>
+            <div>
+              <label>비용(원)</label>
+              <input type="number" id="cost" placeholder="예) 45000" min="0" />
+            </div>
+          </div>
+
+          <div class="hint small" id="editHint" style="margin-top:10px;display:none">
+            편집 중… 저장하면 해당 기록이 수정돼.
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: List / Stats -->
+      <aside class="card">
+        <div class="hd">
+          <h2>기록 목록</h2>
+          <div class="search">
+            <input type="text" id="q" placeholder="검색 (제목/장소/태그/본문)" />
+          </div>
+        </div>
+        <div class="bd">
+          <div class="kpi">
+            <div class="stat">
+              <b id="kpiCount">0</b>
+              <span>총 기록</span>
+            </div>
+            <div class="stat">
+              <b id="kpiCost">0원</b>
+              <span>총 비용(합계)</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="list" id="list"></div>
+          <div class="small" id="empty" style="display:none;margin-top:10px">
+            아직 기록이 없어. 왼쪽에서 첫 데이트 일지를 저장해봐!
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Couple Code Modal -->
+  <div class="modal" id="modal">
+    <div class="box">
+      <div class="hd">
+        <b>커플코드 설정</b>
+        <button class="btn" id="btnClose">닫기</button>
+      </div>
+      <div class="bd">
+        <label>커플코드 (둘이 같은 코드로 맞추기)</label>
+        <input id="coupleCode" class="mono" placeholder="예) GAYOUNG-LOVE-2025" />
+        <div class="hint">
+          이 코드는 <b>저장 공간(로컬)</b>을 분리하는 역할이야. 서로 같은 컴퓨터/브라우저가 아니면 자동 동기화는 안 돼.
+        </div>
+        <div class="divider"></div>
+        <button class="btn primary" id="btnSetCode">적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal" id="modalImport">
+    <div class="box">
+      <div class="hd">
+        <b>불러오기 (JSON)</b>
+        <button class="btn" id="btnCloseImport">닫기</button>
+      </div>
+      <div class="bd">
+        <label>여기에 붙여넣기</label>
+        <textarea id="importText" class="mono" placeholder='{"coupleCode":"...","entries":[...]}'></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="btnImportMerge">합치기(추가)</button>
+          <button class="btn danger" id="btnImportReplace">덮어쓰기</button>
+        </div>
+        <div class="hint">합치기는 기존 기록을 유지하고 새 기록을 추가해.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="dot"></div>
+    <div id="toastText" class="small">저장됨</div>
+  </div>
+
+<script>
+  // ---------- Utilities ----------
+  const $ = (id) => document.getElementById(id);
+  const uid = () => Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
+  const fmtKRW = (n) => (Number(n||0)).toLocaleString("ko-KR") + "원";
+  const todayISO = () => new Date().toISOString().slice(0,10);
+
+  function toast(msg){
+    const t = $("toast");
+    $("toastText").textContent = msg;
+    t.classList.add("on");
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>t.classList.remove("on"), 1400);
+  }
+
+  // ---------- Storage ----------
+  const KEY_CODE = "couple_diary_code_v1";
+  const KEY_DATA_PREFIX = "couple_diary_data_v1:";
+
+  function getCoupleCode(){
+    return localStorage.getItem(KEY_CODE) || "";
+  }
+  function setCoupleCode(code){
+    localStorage.setItem(KEY_CODE, code);
+  }
+  function dataKey(code){
+    return KEY_DATA_PREFIX + (code || "DEFAULT");
+  }
+  function loadData(code){
+    const raw = localStorage.getItem(dataKey(code));
+    if(!raw) return { coupleCode: code || "DEFAULT", entries: [] };
+    try{
+      const parsed = JSON.parse(raw);
+      if(!parsed.entries) parsed.entries = [];
+      return parsed;
+    }catch{
+      return { coupleCode: code || "DEFAULT", entries: [] };
+    }
+  }
+  function saveData(code, data){
+    localStorage.setItem(dataKey(code), JSON.stringify(data));
+  }
+
+  // ---------- App State ----------
+  let coupleCode = getCoupleCode() || "DEFAULT";
+  let data = loadData(coupleCode);
+  let editingId = null;
+
+  // ---------- Render ----------
+  function moodClass(m){
+    if(m==="good") return "good";
+    if(m==="ok") return "ok";
+    return "bad";
+  }
+  function moodLabel(m){
+    if(m==="good") return "좋음 😊";
+    if(m==="ok") return "보통 🙂";
+    return "별로 😶";
+  }
+
+  function syncHeader(){
+    $("coupleCodeLabel").textContent = coupleCode;
+    $("subtitle").textContent = coupleCode === "DEFAULT"
+      ? "커플코드를 설정하면 둘만의 공간으로 분리돼 ✨"
+      : "둘만의 코드로 추억을 쌓는 중 💞";
+  }
+
+  function stats(){
+    const entries = data.entries || [];
+    $("kpiCount").textContent = entries.length.toLocaleString("ko-KR");
+    const sum = entries.reduce((acc,e)=>acc + Number(e.cost||0), 0);
+    $("kpiCost").textContent = fmtKRW(sum);
+  }
+
+  function filteredEntries(){
+    const q = ($("q").value || "").trim().toLowerCase();
+    const entries = [...(data.entries||[])];
+
+    // 최신순 정렬 (날짜 desc)
+    entries.sort((a,b)=> (b.date||"").localeCompare(a.date||""));
+
+    if(!q) return entries;
+    return entries.filter(e=>{
+      const hay = [
+        e.date, e.place, e.title, e.summary, e.content,
+        (e.tags||[]).join(",")
+      ].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  function renderList(){
+    const list = $("list");
+    list.innerHTML = "";
+    const entries = filteredEntries();
+
+    $("empty").style.display = entries.length ? "none" : "block";
+
+    for(const e of entries){
+      const item = document.createElement("div");
+      item.className = "item";
+
+      const left = document.createElement("div");
+      left.className = "meta";
+
+      const top = document.createElement("div");
+      top.className = "top";
+
+      const dateTag = document.createElement("span");
+      dateTag.className = "tag";
+      dateTag.textContent = e.date || "-";
+
+      const mood = document.createElement("span");
+      mood.className = "tag mood " + moodClass(e.mood);
+      mood.textContent = moodLabel(e.mood);
+
+      const place = document.createElement("span");
+      place.className = "tag";
+      place.textContent = e.place ? ("📍 " + e.place) : "📍 (장소 없음)";
+
+      top.append(dateTag, mood, place);
+
+      const ttl = document.createElement("div");
+      ttl.className = "ttl";
+      ttl.textContent = e.title || "(제목 없음)";
+
+      const desc = document.createElement("div");
+      desc.className = "desc";
+      desc.textContent = e.summary || e.content || "(내용 없음)";
+
+      const bottom = document.createElement("div");
+      bottom.className = "top";
+
+      const cost = document.createElement("span");
+      cost.className = "tag";
+      cost.textContent = "💸 " + fmtKRW(e.cost||0);
+
+      bottom.append(cost);
+
+      (e.tags||[]).slice(0,4).forEach(t=>{
+        const tg = document.createElement("span");
+        tg.className = "tag";
+        tg.textContent = "#" + t;
+        bottom.append(tg);
+      });
+      if((e.tags||[]).length > 4){
+        const more = document.createElement("span");
+        more.className = "tag";
+        more.textContent = "+" + ((e.tags||[]).length-4);
+        bottom.append(more);
+      }
+
+      left.append(top, ttl, desc, bottom);
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const btnEdit = document.createElement("button");
+      btnEdit.className = "btn";
+      btnEdit.textContent = "편집";
+      btnEdit.onclick = ()=> startEdit(e.id);
+
+      const btnDel = document.createElement("button");
+      btnDel.className = "btn danger";
+      btnDel.textContent = "삭제";
+      btnDel.onclick = ()=> removeEntry(e.id);
+
+      actions.append(btnEdit, btnDel);
+
+      item.append(left, actions);
+      list.append(item);
+    }
+
+    stats();
+  }
+
+  // ---------- Form ----------
+  function readForm(){
+    const tags = ($("tags").value||"")
+      .split(",").map(s=>s.trim()).filter(Boolean);
+    return {
+      id: editingId || uid(),
+      date: $("date").value || todayISO(),
+      place: $("place").value.trim(),
+      title: $("title").value.trim(),
+      mood: $("mood").value,
+      summary: $("summary").value.trim(),
+      content: $("content").value.trim(),
+      tags,
+      cost: Number($("cost").value || 0),
+      updatedAt: new Date().toISOString(),
+      createdAt: (editingId ? undefined : new Date().toISOString())
+    };
+  }
+
+  function fillForm(e){
+    $("date").value = e.date || todayISO();
+    $("place").value = e.place || "";
+    $("title").value = e.title || "";
+    $("mood").value = e.mood || "good";
+    $("summary").value = e.summary || "";
+    $("content").value = e.content || "";
+    $("tags").value = (e.tags||[]).join(", ");
+    $("cost").value = e.cost || "";
+  }
+
+  function clearForm(){
+    editingId = null;
+    $("formTitle").textContent = "새 데이트 기록";
+    $("editHint").style.display = "none";
+    fillForm({ date: todayISO(), mood:"good" });
+  }
+
+  function startEdit(id){
+    const e = (data.entries||[]).find(x=>x.id===id);
+    if(!e) return;
+    editingId = id;
+    $("formTitle").textContent = "기록 편집";
+    $("editHint").style.display = "block";
+    fillForm(e);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast("편집 모드");
+  }
+
+  function upsertEntry(){
+    const e = readForm();
+
+    // validation lite
+    if(!e.title){
+      toast("제목을 한 글자라도 써줘!");
+      $("title").focus();
+      return;
+    }
+
+    const entries = data.entries || [];
+    const idx = entries.findIndex(x=>x.id===e.id);
+    if(idx >= 0){
+      entries[idx] = { ...entries[idx], ...e, createdAt: entries[idx].createdAt || entries[idx].updatedAt };
+    }else{
+      entries.push(e);
+    }
+    data.entries = entries;
+    saveData(coupleCode, data);
+    renderList();
+    clearForm();
+    toast("저장 완료");
+  }
+
+  function removeEntry(id){
+    const e = (data.entries||[]).find(x=>x.id===id);
+    if(!e) return;
+    const ok = confirm(`삭제할까?\n\n${e.date || ""}  ${e.title || ""}`);
+    if(!ok) return;
+    data.entries = (data.entries||[]).filter(x=>x.id!==id);
+    saveData(coupleCode, data);
+    renderList();
+    if(editingId === id) clearForm();
+    toast("삭제됨");
+  }
+
+  // ---------- Export/Import ----------
+  function doExport(){
+    const payload = JSON.stringify({ coupleCode, entries: data.entries||[] }, null, 2);
+    navigator.clipboard?.writeText(payload).then(()=>{
+      toast("클립보드에 복사됨");
+    }).catch(()=>{
+      // fallback download
+      const blob = new Blob([payload], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `couple-diary-${coupleCode}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast("파일로 다운로드됨");
+    });
+  }
+
+  function openImport(){
+    $("importText").value = "";
+    $("modalImport").classList.add("on");
+  }
+  function closeImport(){
+    $("modalImport").classList.remove("on");
+  }
+
+  function parseImport(){
+    const txt = $("importText").value.trim();
+    if(!txt) throw new Error("빈 값");
+    const obj = JSON.parse(txt);
+    if(!obj.entries || !Array.isArray(obj.entries)) throw new Error("entries 없음");
+    return obj;
+  }
+
+  function importMerge(){
+    try{
+      const obj = parseImport();
+      const incoming = obj.entries.map(e=> ({...e, id: e.id || uid()} ));
+      const map = new Map((data.entries||[]).map(e=>[e.id,e]));
+      for(const e of incoming){
+        if(!map.has(e.id)) map.set(e.id, e);
+      }
+      data.entries = Array.from(map.values());
+      saveData(coupleCode, data);
+      renderList();
+      closeImport();
+      toast("합치기 완료");
+    }catch(err){
+      alert("불러오기 실패: " + err.message);
+    }
+  }
+
+  function importReplace(){
+    try{
+      const obj = parseImport();
+      const ok = confirm("정말 덮어쓸까? (기존 기록이 사라짐)");
+      if(!ok) return;
+      data.entries = obj.entries.map(e=> ({...e, id: e.id || uid()} ));
+      saveData(coupleCode, data);
+      renderList();
+      closeImport();
+      toast("덮어쓰기 완료");
+    }catch(err){
+      alert("불러오기 실패: " + err.message);
+    }
+  }
+
+  // ---------- Couple Code Modal ----------
+  function openCoupleModal(){
+    $("coupleCode").value = coupleCode === "DEFAULT" ? "" : coupleCode;
+    $("modal").classList.add("on");
+  }
+  function closeCoupleModal(){
+    $("modal").classList.remove("on");
+  }
+  function applyCoupleCode(){
+    const code = ($("coupleCode").value || "").trim();
+    coupleCode = code || "DEFAULT";
+    setCoupleCode(coupleCode);
+    data = loadData(coupleCode);
+    saveData(coupleCode, data); // ensure exists
+    syncHeader();
+    clearForm();
+    renderList();
+    closeCoupleModal();
+    toast("커플코드 적용됨");
+  }
+
+  // ---------- Reset ----------
+  function resetAll(){
+    const ok = confirm("초기화할까?\n현재 커플코드 공간의 기록이 모두 삭제돼.");
+    if(!ok) return;
+    data = { coupleCode, entries: [] };
+    saveData(coupleCode, data);
+    clearForm();
+    renderList();
+    toast("초기화 완료");
+  }
+
+  // ---------- Bind ----------
+  $("btnSave").onclick = upsertEntry;
+  $("btnClear").onclick = clearForm;
+  $("q").oninput = renderList;
+
+  $("btnExport").onclick = doExport;
+  $("btnImport").onclick = openImport;
+
+  $("btnCouple").onclick = openCoupleModal;
+  $("btnClose").onclick = closeCoupleModal;
+  $("btnSetCode").onclick = applyCoupleCode;
+
+  $("btnCloseImport").onclick = closeImport;
+  $("btnImportMerge").onclick = importMerge;
+  $("btnImportReplace").onclick = importReplace;
+
+  $("btnReset").onclick = resetAll;
+
+  // init
+  syncHeader();
+  clearForm();
+  // load data exists
+  saveData(coupleCode, data);
+  renderList();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js");
+  }
+</script>
+
+</body>
+</html>
