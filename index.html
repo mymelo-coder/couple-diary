@@ -182,9 +182,12 @@
     }
     .toast.on{display:flex}
     .toast .dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    input[type="file"] {
+  display: block !important;
+}
+
   </style>
-</head>
-<body>
+</head><body>
   <div class="wrap">
     <header>
       <div class="brand">
@@ -216,8 +219,24 @@
             <button class="btn primary" id="btnSave">저장</button>
           </div>
         </div>
+        
         <div class="bd">
           <div class="grid">
+            <div>
+              <label>대표 사진 (1장)</label>
+              <input type="file" id="coverImageInput" accept="image/*">
+              <img id="coverPreview"
+                   style="max-width:100%; display:none; border-radius:12px; margin-top:8px;" />
+            </div>
+            
+            <div>
+              <label>본문 사진 (여러 장)</label>
+              <input type="file" id="photosInput" accept="image/*" multiple>
+              <div id="photosPreview"
+                   style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+            </div>
+            
+           
             <div>
               <label>날짜</label>
               <input type="date" id="date" />
@@ -535,6 +554,9 @@
       content: $("content").value.trim(),
       tags,
       cost: Number($("cost").value || 0),
+      coverImage: coverImageDataUrl || "",
+      photos: photosDataUrls || [],
+
       updatedAt: new Date().toISOString(),
       createdAt: (editingId ? undefined : new Date().toISOString())
     };
@@ -705,7 +727,58 @@
 
   // ---------- Bind ----------
   $("btnSave").onclick = upsertEntry;
+  $("coverImageInput").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  coverImageDataUrl = file ? await fileToDataURL(file) : "";
+
+  const img = $("coverPreview");
+  if (coverImageDataUrl) {
+    img.src = coverImageDataUrl;
+    img.style.display = "block";
+  } else {
+    img.style.display = "none";
+  }
+});
+
+
+$("photosInput").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files || []);
+  photosDataUrls = [];
+  for (const f of files) {
+    photosDataUrls.push(await fileToDataURL(f));
+  }
+});
+
   $("btnClear").onclick = clearForm;
+  // ===== Images (in-memory) =====
+let coverImageDataUrl = "";
+let photosDataUrls = [];
+
+function fileToDataURL(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleCoverChange(e){
+  const f = e.target.files && e.target.files[0];
+  coverImageDataUrl = f ? await fileToDataURL(f) : "";
+}
+
+async function handlePhotosChange(e){
+  const files = Array.from(e.target.files || []);
+  photosDataUrls = [];
+  for(const f of files){
+    photosDataUrls.push(await fileToDataURL(f));
+  }
+}
+
+$("coverImageInput").addEventListener("change", handleCoverChange);
+$("photosInput").addEventListener("change", handlePhotosChange);
+
   $("q").oninput = renderList;
 
   $("btnExport").onclick = doExport;
