@@ -420,11 +420,9 @@ input, select, textarea, button { max-width: 100%; }
 
 
   </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
-</head><body>
+</head>
+<body>
   <section id="ddayCard" class="dday-card">
     <div class="dday-title">우리 사귄지</div>
     <div class="dday-value" id="ddayValue">D+0</div>
@@ -614,7 +612,8 @@ input, select, textarea, button { max-width: 100%; }
           </div>
           <div class="divider"></div>
           <div class="list" id="list"></div>
-          <div class="small" id="empty" style="display:none; margin:...">
+          <div class="small" id="empty" style="display:none; margin:10px;">
+
             아직 기록이 없어. 왼쪽에서 첫 데이트 일지를 저장해!
           </div>
 
@@ -646,12 +645,11 @@ input, select, textarea, button { max-width: 100%; }
   </div>
 
   <!-- Import Modal -->
-  <div class="modal" id="modalImport" onclick="closeImportModal(event)">
+  <div class="modal" id="modalImport">
     <div class="box">
       <div class="hd">
         <b>불러오기 (JSON)</b>
-        <button class="btn" onclick="window.closeImportModal()">닫기</button>
-
+        <button class="btn" id="btnCloseImport">닫기</button>
 
       </div>
       <div class="bd">
@@ -679,64 +677,44 @@ function renderDDay(){
   if(!elInput || !elText) return;
 
   const saved = localStorage.getItem("annivDate") || "";
-  const base = elInput.value || saved;
-
-  if(saved && !elInput.value) elInput.value = saved;
-
-  if(!base){
-    elText.textContent = "D+0";
-    return;
-  }
-
-  const [y,m,d] = base.split("-").map(Number);
-  const start = new Date(y, m-1, d);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diff = Math.floor((today - start) / (1000*60*60*24));
-
-  elText.textContent = diff >= 0 ? `D+${diff}` : `D${diff}`;
-}
 
 const btn = document.getElementById("btnSaveAnniv");
 const inp = document.getElementById("annivDate");
 
-if(btn){
+if (btn) {
   btn.onclick = () => {
-    if(!inp?.value) { alert("사귄 날 날짜를 선택해줘!"); return; }
+    if (!inp?.value) {
+      alert("사귄 날 날짜를 선택해줘!");
+      return;
+    }
     localStorage.setItem("annivDate", inp.value);
     renderDDay();
   };
 }
-if(inp) inp.addEventListener("change", renderDDay);
-renderDDay();
 
-    if (!dDayText) return;
+if (inp) inp.addEventListener("change", renderDDay);
 
-    const start = localStorage.getItem("loveStartDate");
-    if (!start) {
-      dDayText.textContent = "D-day 설정 필요";
-      return;
-      if (loveInput) {
-  loveInput.addEventListener("change", () => {
-    localStorage.setItem("loveStartDate", loveInput.value);
-    renderDDay();
-  });
-}
-renderDDay();
+function renderDDay() {
+  const dDayText = document.getElementById("dDayText");
+  if (!dDayText) return;
 
-    }
-
-    const startDate = new Date(start);
-    const today = new Date();
-
-    startDate.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-
-    const diff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
-    dDayText.textContent = `D+${diff}`;
+  const start = localStorage.getItem("annivDate");
+  if (!start) {
+    dDayText.textContent = "D-day 설정 필요";
+    return;
   }
 
-  // 1) Firebase 설정 (콘솔 > 프로젝트 설정 > 일반 > 웹앱 설정에서 복붙)
+  const startDate = new Date(start + "T00:00:00");
+  const today = new Date();
+  const today00 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = Math.floor((today00 - startDate) / (1000 * 60 * 60 * 24));
+
+  dDayText.textContent = `D+${diff + 1}`;
+}
+
+renderDDay(); // 페이지 로드 시 자동 표시
+
+// ---------------- Firebase (전역) ----------------
 const firebaseConfig = {
   apiKey: "...",
   authDomain: "...",
@@ -754,7 +732,6 @@ async function boot() {
   const cred = await auth.signInAnonymously();
   myUid = cred.user.uid;
 
-  // 커플코드는 둘이 같은 걸 입력
   coupleId = localStorage.getItem("coupleId");
   if (!coupleId) {
     coupleId = prompt("커플코드(둘이만 아는 값) 입력")?.trim();
@@ -762,14 +739,14 @@ async function boot() {
     localStorage.setItem("coupleId", coupleId);
   }
 
-  // couples/{coupleId} 문서에 내 uid를 멤버로 등록
   const ref = db.collection("couples").doc(coupleId);
   await ref.set({
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     members: { [myUid]: true }
   }, { merge: true });
+
+  // startEntriesListener();  // 이 함수 만든 뒤 여기서 호출
 }
-startEntriesListener();
 
 boot();
 
@@ -1573,15 +1550,154 @@ function closeImportModal() {
   const modal = document.getElementById("modalImport");
   if (modal) modal.style.display = "none";
 }
-window.closeImportModal = function () {
-  const modal = document.getElementById("modalImport");
-  if (modal) modal.style.display = "none";
-};
+
+const modalImport = document.getElementById("modalImport");
+const btnCloseImport = document.getElementById("btnCloseImport");
+
+// 모달 바깥 클릭하면 닫기
+if (modalImport) {
+  modalImport.addEventListener("click", (e) => {
+    if (e.target === modalImport) closeImportModal();
+  });
+}
+
+// 닫기 버튼 클릭하면 닫기
+if (btnCloseImport) {
+  btnCloseImport.addEventListener("click", closeImportModal);
+}
+const btnClose = document.getElementById("btnClose");
+const modal = document.getElementById("modal");
+if (btnClose && modal) btnClose.addEventListener("click", () => (modal.style.display = "none"));
+
+// ===== storage key =====
+function getCoupleId() {
+  return (localStorage.getItem("coupleId") || "default").trim();
+}
+function getEntriesKey() {
+  return `entries_${getCoupleId()}`;
+}
+
+// ===== load/save =====
+function loadEntries() {
+  try {
+    return JSON.parse(localStorage.getItem(getEntriesKey()) || "[]");
+  } catch {
+    return [];
+  }
+}
+function saveEntries(entries) {
+  localStorage.setItem(getEntriesKey(), JSON.stringify(entries));
+}
+
+// ===== render =====
+function renderEntries() {
+  const list = document.getElementById("list");     // 너 목록 id에 맞게 수정
+  const empty = document.getElementById("empty");   // 빈 상태 문구 id
+  if (!list) return;
+
+  const entries = loadEntries();
+  if (empty) empty.style.display = entries.length ? "none" : "block";
+
+  list.innerHTML = entries.map(e => `
+    <div class="item">
+      <div class="meta">
+        <div class="top">
+          <span class="tag">${e.date || ""}</span>
+          ${e.mood ? `<span class="tag mood ${e.mood}">${e.mood}</span>` : ""}
+        </div>
+        <div class="ttl">${escapeHtml(e.title || "")}</div>
+        <div class="desc">${escapeHtml(e.desc || "")}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// XSS 방지용(간단)
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+// ===== save button =====
+function wireSave() {
+  const btnSave = document.getElementById("btnSave"); // 너 저장 버튼 id에 맞게 수정
+  if (!btnSave) return;
+
+  btnSave.addEventListener("click", () => {
+    // 너 입력칸 id에 맞게 수정
+    const title = document.getElementById("inpTitle")?.value?.trim() || "";
+    const desc  = document.getElementById("inpDesc")?.value?.trim() || "";
+    const date  = document.getElementById("inpDate")?.value || "";
+    const mood  = document.getElementById("inpMood")?.value || "";
+
+    if (!title && !desc) {
+      alert("내용을 입력해줘!");
+      return;
+    }
+
+    const entries = loadEntries();
+    entries.unshift({
+      id: crypto.randomUUID(),
+      title, desc, date, mood,
+      createdAt: Date.now(),
+    });
+
+    saveEntries(entries);
+    renderEntries();
+
+    console.log("✅ saved to", getEntriesKey(), entries[0]); // 디버그
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  wireSave();
+  renderEntries();
+});
+
+}
+const btnSaveAnniv = document.getElementById("btnSaveAnniv");
+const inp = document.getElementById("annivDate"); // 사귄 날 input
+
+if (btnSaveAnniv) {
+  btnSaveAnniv.addEventListener("click", () => {
+    if (!inp || !inp.value) {
+      alert("사귄 날 날짜를 선택해줘!");
+      return;
+    }
+
+    // ✅ 저장
+    localStorage.setItem("annivDate", inp.value);
+
+    // ✅ 바로 화면 갱신
+    renderDDay();
+
+    console.log("✅ annivDate saved:", inp.value);
+  });
+}
 
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js");
+  }
+  document.addEventListener("DOMContentLoaded", renderDDay);
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+<script>
+  function closeImport() {
+    const modal = document.getElementById("modalImport");
+    if (modal) {
+      modal.classList.remove("on");
+      modal.style.display = "none";
+    }
   }
 </script>
 
