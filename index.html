@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="데이트일지">
 <link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 
   <title>우리 데이트 일지</title>
@@ -192,11 +193,139 @@ input[type="file"] {
   width: 100% !important;
   height: auto !important;
 }
+/* ===== Mobile responsive ===== */
+
+/* 기본적으로 이미지/인풋이 화면 밖으로 튀는 거 방지 */
+img { max-width: 100%; height: auto; }
+input, select, textarea, button { max-width: 100%; }
+
+/* iPhone 노치 안전영역 */
+.wrap {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* 1024 이하: 여백 살짝 줄이기 */
+@media (max-width: 1024px){
+  .wrap { padding: 16px; }
+}
+
+/* 860 이하: 2컬럼 -> 1컬럼(세로) */
+@media (max-width: 860px){
+  main{
+    /* 너희 main이 grid/flex 뭐든 상관없이 “세로”로 강제 */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* 카드 폭 꽉 채우기 */
+  .card { width: 100% !important; }
+
+  /* 상단(헤더) 버튼들: 줄바꿈 허용 */
+  .right{
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .pill, .btn{
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* 입력 폼: 그리드가 2칸이면 1칸으로 */
+  .grid{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* textarea 높이 조금 늘려서 모바일 타이핑 편하게 */
+  textarea{
+    min-height: 140px !important;
+  }
+
+  /* 검색창/입력창 터치 편하게 */
+  input, select, textarea{
+    font-size: 16px !important; /* iOS 자동줌 방지 */
+  }
+}
+
+/* 420 이하: 더 촘촘하게 */
+@media (max-width: 420px){
+  .wrap { padding: 12px; }
+  .pill, .btn{
+    width: auto;
+    min-height: 40px;
+  }
+}
+  /* ✅ D-day 위젯 */
+.ddayWidget{
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(10px);
+}
+.ddayTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+#ddayText{
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+.ddayRow{
+  display:flex;
+  gap:8px;
+}
+.ddayRow input{
+  flex:1;
+}
+.ddayRow button{
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+/* ===== D-day 위젯 ===== */
+.dday {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.annivAuto{
+  font-size: 14px;
+  text-align: center;
+  opacity: 0.9;
+  margin-bottom: 14px;
+}
+.ddayWidget{ display:flex; gap:8px; align-items:center; }
+#ddayText{ font-weight:700; }
+
 
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
 </head><body>
   <div class="wrap">
+    <div id="ddayBox" class="dday">
+      <div id="annivAuto" class="annivAuto"></div>
+      💕 D+<span id="ddayCount">0</span>
+    </div>
     <header>
+      <!-- D-day 위젯 -->
+<div class="ddayWidget">
+  <input type="date" id="annivDate" />
+  <button id="btnSaveAnniv">저장</button>
+  <span id="ddayText">D+0</span>
+</div>
+<div id="annivAuto"></div>
+
       <div class="brand">
         <div class="logo">♥</div>
         <div class="title">
@@ -209,11 +338,26 @@ input[type="file"] {
           <span>커플코드</span>
           <b id="coupleCodeLabel" class="mono">-</b>
         </div>
+        <!-- ✅ D-day 위젯 -->
+        <div class="ddayWidget">
+        <div class="ddayTop">
+        <b>사귄 날</b>
+        <span id="ddayText">D+0</span>
+        </div>
+
+        <div class="ddayRow">
+        <input type="date" id="annivDate" />
+        <button type="button" id="btnSaveAnniv">저장</button>
+        </div>
+        </div>
+
         <button class="btn" id="btnExport">내보내기</button>
         <button class="btn" id="btnImport">불러오기</button>
         <button class="btn danger" id="btnReset">초기화</button>
         <button class="btn primary" id="btnCouple">커플코드 설정</button>
       </div>
+     
+
     </header>
 
     <main>
@@ -238,12 +382,27 @@ input[type="file"] {
             
             <div>
               <label>본문 사진 (여러 장)</label>
-              <input type="file" id="photosInput" accept="image/*" multiple>
+              <label>본문 사진 (여러 장)</label>
+
+              <button type="button" id="btnAddPhotos">사진 추가</button>
+
+              <input type="file"
+                id="photosInput"
+                accept="image/*"
+                multiple
+                style="display:none"
+              />
+
               <div id="photosPreview"
-                   style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
-            </div>
+                  style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+              </div>
+
             
-           
+              <div>
+                <label>사귄 날</label>
+                <input type="date" id="loveStartDate" />
+              </div>
+              
             <div>
               <label>날짜</label>
               <input type="date" id="date" />
@@ -320,8 +479,12 @@ input[type="file"] {
           </div>
           <div class="divider"></div>
           <div class="list" id="list"></div>
-          <div class="small" id="empty" style="display:none;margin-top:10px">
-            아직 기록이 없어. 왼쪽에서 첫 데이트 일지를 저장해봐!
+          <div class="small" id="empty" style="display:none; margin:...">
+            아직 기록이 없어. 왼쪽에서 첫 데이트 일지를 저장해!
+          </div>
+
+           
+
           </div>
         </div>
       </aside>
@@ -372,11 +535,130 @@ input[type="file"] {
   </div>
 
 <script>
+  // ===== D-day (annivDate + ddayText) =====
+function renderDDay(){
+  const elInput = document.getElementById("annivDate");
+  const elText  = document.getElementById("ddayText");
+  if(!elInput || !elText) return;
+
+  const saved = localStorage.getItem("annivDate") || "";
+  const base = elInput.value || saved;
+
+  if(saved && !elInput.value) elInput.value = saved;
+
+  if(!base){
+    elText.textContent = "D+0";
+    return;
+  }
+
+  const [y,m,d] = base.split("-").map(Number);
+  const start = new Date(y, m-1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.floor((today - start) / (1000*60*60*24));
+
+  elText.textContent = diff >= 0 ? `D+${diff}` : `D${diff}`;
+}
+
+const btn = document.getElementById("btnSaveAnniv");
+const inp = document.getElementById("annivDate");
+
+if(btn){
+  btn.onclick = () => {
+    if(!inp?.value) { alert("사귄 날 날짜를 선택해줘!"); return; }
+    localStorage.setItem("annivDate", inp.value);
+    renderDDay();
+  };
+}
+if(inp) inp.addEventListener("change", renderDDay);
+renderDDay();
+
+    if (!dDayText) return;
+
+    const start = localStorage.getItem("loveStartDate");
+    if (!start) {
+      dDayText.textContent = "D-day 설정 필요";
+      return;
+      if (loveInput) {
+  loveInput.addEventListener("change", () => {
+    localStorage.setItem("loveStartDate", loveInput.value);
+    renderDDay();
+  });
+}
+renderDDay();
+
+    }
+
+    const startDate = new Date(start);
+    const today = new Date();
+
+    startDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+
+    const diff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    dDayText.textContent = `D+${diff}`;
+  }
+
+  // 1) Firebase 설정 (콘솔 > 프로젝트 설정 > 일반 > 웹앱 설정에서 복붙)
+const firebaseConfig = {
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let myUid = null;
+let coupleId = null;
+
+async function boot() {
+  const cred = await auth.signInAnonymously();
+  myUid = cred.user.uid;
+
+  // 커플코드는 둘이 같은 걸 입력
+  coupleId = localStorage.getItem("coupleId");
+  if (!coupleId) {
+    coupleId = prompt("커플코드(둘이만 아는 값) 입력")?.trim();
+    if (!coupleId) return;
+    localStorage.setItem("coupleId", coupleId);
+  }
+
+  // couples/{coupleId} 문서에 내 uid를 멤버로 등록
+  const ref = db.collection("couples").doc(coupleId);
+  await ref.set({
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    members: { [myUid]: true }
+  }, { merge: true });
+}
+startEntriesListener();
+
+boot();
+
+   
+
+
   // ---------- Utilities ----------
   const $ = (id) => document.getElementById(id);
   const uid = () => Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
   const fmtKRW = (n) => (Number(n||0)).toLocaleString("ko-KR") + "원";
   const todayISO = () => new Date().toISOString().slice(0,10);
+
+  // ✅ D-day helpers
+function daysSince(yyyy_mm_dd){
+  if(!yyyy_mm_dd) return 0;
+
+  // 로컬 날짜 기준(시간 때문에 하루 밀리는 거 방지)
+  const [y,m,d] = yyyy_mm_dd.split("-").map(Number);
+  const start = new Date(y, m-1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diff = today.getTime() - start.getTime();
+  return Math.floor(diff / (1000*60*60*24));
+}
+
 
   function toast(msg){
     const t = $("toast");
@@ -717,6 +999,7 @@ input[type="file"] {
     syncHeader();
     clearForm();
     renderList();
+    listenEntries();
     closeCoupleModal();
     toast("커플코드 적용됨");
   }
@@ -733,7 +1016,7 @@ input[type="file"] {
   }
 
   // ---------- Bind ----------
-  $("btnSave").onclick = upsertEntry;
+  $("btnSave").onclick = saveEntryToFirestore;
   $("coverImageInput").addEventListener("change", async (e) => {
   const file = e.target.files && e.target.files[0];
   coverImageDataUrl = file ? await fileToDataURL(file) : "";
@@ -747,14 +1030,31 @@ input[type="file"] {
   }
 });
 
-
 $("photosInput").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files || []);
   photosDataUrls = [];
+
+  const wrap = $("photosPreview");
+  wrap.innerHTML = "";
+
   for (const f of files) {
-    photosDataUrls.push(await fileToDataURL(f));
+    const url = await fileToDataURL(f);
+    photosDataUrls.push(url);
+
+    const img = document.createElement("img");
+    img.src = url;
+
+    // ✅ 모바일 최적화 스타일
+    img.style.width = "76px";
+    img.style.height = "76px";
+    img.style.objectFit = "cover";
+    img.style.borderRadius = "10px";
+
+    wrap.appendChild(img);
   }
 });
+
+
 
   $("btnClear").onclick = clearForm;
   // ===== Images (in-memory) =====
@@ -807,6 +1107,265 @@ $("photosInput").addEventListener("change", handlePhotosChange);
   // load data exists
   saveData(coupleCode, data);
   renderList();
+  // ✅ D-day init
+if ($("btnSaveAnniv")) {
+  $("btnSaveAnniv").onclick = () => {
+    const v = $("annivDate").value;
+    if(!v) { alert("사귄 날 날짜를 선택해줘!"); return; }
+    localStorage.setItem("annivDate", v);
+    renderDDay();
+    toast?.("저장됨"); // toast 함수 있으면 뜸, 없으면 무시됨
+  };
+}
+if ($("annivDate")) {
+  $("annivDate").addEventListener("change", renderDDay);
+}
+renderDDay();
+
+  function getFormData() {
+  // 너 HTML id 기준(스크린샷에서 date/place/title 등 보였음)
+  const date = $("date")?.value || todayISO();
+  const place = $("place")?.value || "";
+  const title = $("title")?.value || "";
+  const mood = $("mood")?.value || "";
+  const summary = $("summary")?.value || "";
+  const body = $("body")?.value || $("content")?.value || ""; // 혹시 본문 id가 다를 수 있어서
+  const tags = ($("tags")?.value || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+  const cost = Number(($("cost")?.value || "0").replace(/[^\d]/g, "")) || 0;
+
+  // 이미지(너가 이미 만들어둔 in-memory 변수 사용)
+  // coverImageDataUrl, photosDataUrls 가 전역에 있다고 했지? 없으면 아래 2줄은 지워도 됨.
+  const cover = (typeof coverImageDataUrl !== "undefined") ? coverImageDataUrl : "";
+  const photos = (typeof photosDataUrls !== "undefined") ? photosDataUrls : [];
+
+  return { date, place, title, mood, summary, body, tags, cost, cover, photos };
+}
+
+async function saveEntryToFirestore() {
+  if (!db || !coupleId || !myUid) {
+    alert("아직 로그인/커플코드 준비가 안 됐어. 새로고침하고 다시 시도해줘!");
+    return;
+  }
+
+  const data = getFormData();
+
+  // 수정/신규 구분: (너 코드에 editingId 같은 게 있으면 그걸 쓰면 되고)
+  // 없으면 무조건 신규로 저장
+  const editingId = window.editingId || null;
+
+  const ref = editingId
+    ? db.collection("couples").doc(coupleId).collection("entries").doc(editingId)
+    : db.collection("couples").doc(coupleId).collection("entries").doc();
+
+  await ref.set({
+    ...data,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: editingId ? firebase.firestore.FieldValue.serverTimestamp() : firebase.firestore.FieldValue.serverTimestamp(),
+    authorUid: myUid
+  }, { merge: true });
+
+  // 저장 끝나면 편집모드 해제
+  window.editingId = null;
+
+  toast?.("저장됨") || console.log("saved");
+}
+let unsubEntries = null;
+
+function startEntriesListener() {
+  if (!db || !coupleId) return;
+
+  // 기존 리스너 있으면 끊기
+  if (unsubEntries) unsubEntries();
+
+  const q = db.collection("couples")
+    .doc(coupleId)
+    .collection("entries")
+    .orderBy("date", "desc")
+    .orderBy("updatedAt", "desc");
+
+  unsubEntries = q.onSnapshot((snap) => {
+    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderEntries(entries);
+    renderStats(entries);
+  }, (err) => {
+    console.error(err);
+    alert("불러오기 에러: " + err.message);
+  });
+}
+
+function renderEntries(entries) {
+  // 너 앱의 “기록 목록” 영역 id가 뭔지 몰라서 2개 후보로 처리
+  const listEl = $("list") || $("entries") || $("records") || $("entryList");
+
+  if (!listEl) {
+    console.log("entries:", entries);
+    return;
+  }
+
+  listEl.innerHTML = "";
+
+  if (!entries.length) {
+    listEl.innerHTML = `<div class="empty">아직 기록이 없어. 왼쪽에서 첫 데이트 일지를 저장해봐!</div>`;
+    return;
+  }
+
+  for (const e of entries) {
+    const item = document.createElement("div");
+    item.className = "item";
+
+    item.innerHTML = `
+      <div class="itemTop">
+        <div class="itemTitle">${escapeHtml(e.title || "(제목 없음)")}</div>
+        <div class="itemDate">${escapeHtml(e.date || "")}</div>
+      </div>
+      <div class="itemMeta">
+        <span>${escapeHtml(e.place || "")}</span>
+        <span>${escapeHtml(e.mood || "")}</span>
+        <span>${e.cost ? `${Number(e.cost).toLocaleString("ko-KR")}원` : ""}</span>
+      </div>
+      ${e.summary ? `<div class="itemSummary">${escapeHtml(e.summary)}</div>` : ""}
+      ${e.cover ? `<img class="itemCover" src="${e.cover}" />` : ""}
+    `;
+
+    item.onclick = () => loadEntryToForm(e);
+    listEl.appendChild(item);
+  }
+}
+
+function loadEntryToForm(e) {
+  $("date") && ($("date").value = e.date || todayISO());
+  $("place") && ($("place").value = e.place || "");
+  $("title") && ($("title").value = e.title || "");
+  $("mood") && ($("mood").value = e.mood || "");
+  $("summary") && ($("summary").value = e.summary || "");
+  ($("body") || $("content")) && ((($("body") || $("content")).value = e.body || ""));
+
+  $("tags") && ($("tags").value = (e.tags || []).join(", "));
+  $("cost") && ($("cost").value = e.cost || 0);
+
+  // 이미지 미리보기(있는 경우)
+  if (typeof coverImageDataUrl !== "undefined") coverImageDataUrl = e.cover || "";
+  if (typeof photosDataUrls !== "undefined") photosDataUrls = e.photos || [];
+
+  const coverPreview = $("coverPreview");
+  if (coverPreview && e.cover) {
+    coverPreview.src = e.cover;
+    coverPreview.style.display = "block";
+  } else if (coverPreview) {
+    coverPreview.style.display = "none";
+  }
+
+  const photosPreview = $("photosPreview");
+  if (photosPreview) {
+    photosPreview.innerHTML = "";
+    (e.photos || []).forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.style.width = "76px";
+      img.style.height = "76px";
+      img.style.objectFit = "cover";
+      img.style.borderRadius = "10px";
+      photosPreview.appendChild(img);
+    });
+  }
+
+  window.editingId = e.id; // ✅ 다음 저장은 수정으로 들어감
+}
+
+function renderStats(entries) {
+  // 너 UI에 “총 기록”, “총 비용” 박스가 있던데 id가 프로젝트마다 달라서 후보로 처리
+  const totalCountEl = $("totalCount") || $("statCount");
+  const totalCostEl = $("totalCost") || $("statCost");
+
+  if (totalCountEl) totalCountEl.textContent = String(entries.length);
+
+  const sum = entries.reduce((acc, e) => acc + (Number(e.cost) || 0), 0);
+  if (totalCostEl) totalCostEl.textContent = `${sum.toLocaleString("ko-KR")}원`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[m]));
+}
+let unsub = null;
+
+function listenEntries() {
+  if (unsub) unsub();
+
+  const listEl = $("entryList");
+  if (!listEl) {
+    console.error("entryList 없음: <div id='entryList'></div> 확인");
+    return;
+  }
+
+  unsub = db.collection("couples")
+    .doc(coupleId)
+    .collection("entries")
+    .orderBy("date", "desc")
+    .orderBy("updatedAt", "desc")
+    .onSnapshot((snap) => {
+      const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      listEl.innerHTML = entries.length
+        ? entries.map(e => `
+            <div class="item">
+              <div class="itemTop">
+                <div class="itemTitle">${escapeHtml(e.title || "(제목없음)")}</div>
+                <div class="itemDate">${escapeHtml(e.date || "")}</div>
+              </div>
+              <div class="itemMeta">
+                <span>${escapeHtml(e.place || "")}</span>
+                <span>${escapeHtml(e.mood || "")}</span>
+                <span>${e.cost ? `${Number(e.cost).toLocaleString("ko-KR")}원` : ""}</span>
+              </div>
+              ${e.summary ? `<div class="itemSummary">${escapeHtml(e.summary)}</div>` : ""}
+            </div>
+          `).join("")
+        : `<div class="empty">아직 기록이 없어. 왼쪽에서 저장해봐!</div>`;
+    }, (err) => {
+      console.error("listenEntries 에러:", err);
+      alert("목록 불러오기 에러: " + err.message);
+    });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[m]));
+}
+$("btnAddPhotos").onclick = () => {
+  $("photosInput").click();
+};
+// ===== D-day =====
+const loveInput = $("loveStartDate");
+const ddayCountEl = $("ddayCount");
+
+// 날짜 차이 계산
+function calcDDay(start) {
+  const startDate = new Date(start);
+  const today = new Date();
+  const diff = today - startDate;
+  return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+}
+
+// 입력 변경 시 저장
+if (loveInput) {
+  const saved = localStorage.getItem("loveStartDate");
+  if (saved) loveInput.value = saved;
+
+  loveInput.addEventListener("change", () => {
+    localStorage.setItem("loveStartDate", loveInput.value);
+    renderDDay();
+  });
+}
+
+// 최초 표시
+renderDDay();
+
 </script>
 <script>
   if ("serviceWorker" in navigator) {
