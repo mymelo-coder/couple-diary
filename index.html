@@ -381,6 +381,43 @@ input, select, textarea, button { max-width: 100%; }
   color:white;
   border:0;
 }
+/* import 모달이 항상 최상단 */
+#modalImport { 
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+}
+
+/* 모달 안 내용(패널)은 클릭 가능 + 오버레이보다 위 */
+#modalImport .box,
+#modalImport .panel,
+#modalImport .content,
+#modalImport .wrap,
+#modalImport .container {
+  position: relative;
+  z-index: 100000;
+  pointer-events: auto;
+}
+
+/* 혹시 모달 배경(오버레이)이 버튼 위를 덮는 경우를 방지 */
+#modalImport .hd, 
+#modalImport button {
+  position: relative;
+  z-index: 100001;
+  pointer-events: auto;
+}
+#modalImport {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+}
+
+#modalImport button {
+  position: relative;
+  z-index: 100000;
+  pointer-events: auto;
+}
+
 
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -609,11 +646,13 @@ input, select, textarea, button { max-width: 100%; }
   </div>
 
   <!-- Import Modal -->
-  <div class="modal" id="modalImport">
+  <div class="modal" id="modalImport" onclick="closeImportModal(event)">
     <div class="box">
       <div class="hd">
         <b>불러오기 (JSON)</b>
-        <button class="btn" id="btnCloseImport">닫기</button>
+        <button class="btn" onclick="window.closeImportModal()">닫기</button>
+
+
       </div>
       <div class="bd">
         <label>여기에 붙여넣기</label>
@@ -1501,8 +1540,10 @@ function openModal() {
   document.getElementById("ddayModal").classList.remove("hidden");
 }
 function closeModal() {
-  document.getElementById("ddayModal").classList.add("hidden");
+  const modal = document.getElementById("importModal"); // id 맞게
+  modal.style.display = "none";
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   renderDDay();
@@ -1528,6 +1569,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "ddayModal") closeModal();
   });
 });
+function closeImportModal() {
+  const modal = document.getElementById("modalImport");
+  if (modal) modal.style.display = "none";
+}
+window.closeImportModal = function () {
+  const modal = document.getElementById("modalImport");
+  if (modal) modal.style.display = "none";
+};
 
 </script>
 <script>
